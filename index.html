@@ -2,30 +2,36 @@
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>感官遊戲 - 音量精調版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>感官教育遊戲</title>
     <style>
+        :root {
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
         body, html {
             margin: 0; padding: 0;
             width: 100%; height: 100%;
             overflow: hidden;
             background-color: #000;
-            font-family: '微軟正黑體', sans-serif;
-            touch-action: none;
+            font-family: '微軟正黑體', -apple-system, sans-serif;
+            touch-action: none; 
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
         }
 
-        /* 啟動畫面：解除 iPad 聲音鎖定 */
+        /* 啟動遮罩 */
         #overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.95);
+            background: rgba(0,0,0,0.98);
             display: flex; justify-content: center; align-items: center;
             z-index: 100; color: white; cursor: pointer;
         }
         .start-btn {
-            padding: 35px 70px; font-size: 3.5rem; background: #ffeb3b;
-            color: black; border-radius: 40px; font-weight: bold;
-            box-shadow: 0 0 40px rgba(255,235,59,0.6);
+            padding: 35px 70px; font-size: clamp(2.5rem, 8vw, 4rem); 
+            background: #ffeb3b; color: black; border-radius: 50px; 
+            font-weight: bold; box-shadow: 0 0 50px rgba(255,235,59,0.5);
         }
 
         .container {
@@ -33,53 +39,72 @@
             grid-template-columns: 1fr 1fr;
             grid-template-rows: 1fr 1fr;
             width: 100vw; height: 100vh;
-            gap: 15px; padding: 15px;
+            padding: calc(var(--safe-top) + 15px) 15px calc(var(--safe-bottom) + 15px) 15px;
+            gap: 15px;
             box-sizing: border-box;
         }
 
         .texture-card {
             position: relative;
             display: flex; justify-content: center; align-items: center;
-            border-radius: 50px;
+            border-radius: clamp(30px, 5vw, 50px);
             overflow: hidden;
             border: 10px solid rgba(255, 255, 255, 0.3);
             background-size: cover;
             background-position: center;
-            box-shadow: inset 0 0 0 2000px rgba(0,0,0,0.4);
+            box-shadow: inset 0 0 0 2000px rgba(0,0,0,0.3);
             transition: transform 0.2s;
         }
 
-        /* --- 質感視覺設計 --- */
-        #fur { background-color: #ff4081; background-image: radial-gradient(#f48fb1 30%, transparent 31%); background-size: 40px 40px; }
-        #wood { background-color: #795548; background-image: repeating-linear-gradient(90deg, #795548, #795548 15px, #5d4037 16px, #5d4037 30px); }
+        /* --- 質感設計 --- */
+
+        /* 1. 毛毛 (線條狀圖案) */
+        #fur {
+            background-color: #ff80ab;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M5,5 Q10,15 15,5 M25,5 Q30,15 35,5 M5,25 Q10,35 15,25 M25,25 Q30,35 35,25 M15,15 Q20,25 25,15 M0,15 Q5,25 10,15' stroke='%23f06292' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-size: 30px 30px;
+        }
+
+        /* 2. 木材 (年輪木紋) */
+        #wood {
+            background-color: #6d4c41;
+            background-image: 
+                repeating-linear-gradient(92deg, transparent, transparent 20px, rgba(0,0,0,0.1) 22px, transparent 24px),
+                radial-gradient(ellipse at 70% 20%, rgba(93, 64, 55, 0.8) 0%, transparent 50%),
+                radial-gradient(ellipse at 30% 60%, rgba(141, 110, 99, 0.8) 0%, transparent 40%),
+                linear-gradient(to bottom right, #8d6e63, #5d4037);
+            background-size: 100% 100%, 200% 100%, 150% 150%, 100% 100%;
+        }
+
+        /* 3. 金屬 (金色) */
         #metal { background: linear-gradient(135deg, #bf953f 0%, #fcf6ba 45%, #b38728 55%, #fbf5b7 100%); border-color: #ffd700; }
+        
+        /* 4. 沙紙 (細微顆粒) */
         #sandpaper { background-color: #d7ccc8; background-image: radial-gradient(#8d6e63 10%, transparent 11%); background-size: 10px 10px; }
 
-        /* 互動效果 */
-        .active-dwell { transform: scale(1.02); border-color: #fff; box-shadow: inset 0 0 0 2000px rgba(0,0,0,0.2); }
+        .active-dwell { transform: scale(0.98); border-color: #fff; box-shadow: inset 0 0 0 2000px rgba(0,0,0,0.1); }
 
         .label {
-            color: white; font-size: 5rem; font-weight: 900;
+            color: white; font-size: clamp(2.5rem, 10vw, 5rem); font-weight: 900;
             text-shadow: 4px 4px 15px rgba(0,0,0,1); z-index: 2;
             pointer-events: none;
         }
         #sandpaper .label { color: #3e2723; text-shadow: none; }
 
-        /* 進度圈 */
         .progress-ring {
-            position: absolute; width: 260px; height: 260px;
-            border: 18px solid rgba(255,255,255,0.2);
-            border-top: 18px solid #ffeb3b;
+            position: absolute; width: min(240px, 45vw); height: min(240px, 45vw);
+            border: 15px solid rgba(255,255,255,0.2);
+            border-top: 15px solid #ffeb3b;
             border-radius: 50%; display: none;
             animation: spin 1s linear infinite; z-index: 1;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        .active-animation { animation: pulse 0.6s ease; }
+        .active-animation { animation: pulse 0.5s ease; }
         @keyframes pulse {
-            0% { transform: scale(1.02); }
-            50% { transform: scale(1.15); border-color: #ffeb3b; }
-            100% { transform: scale(1.02); }
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); border-color: #ffeb3b; }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
@@ -122,8 +147,19 @@
     let audioCtx;
 
     function initGame() {
+        // 啟動音訊引擎
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
         document.getElementById('overlay').style.display = 'none';
+        
+        // 預啟動靜音緩衝區
+        const buffer = audioCtx.createBuffer(1, 1, 22050);
+        const source = audioCtx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(audioCtx.destination);
+        source.start(0);
     }
 
     function playSound(type) {
@@ -133,16 +169,13 @@
         masterGain.connect(audioCtx.destination);
 
         if (type === 'fur') {
-            // 毛毛音量：調大至 1.1
             const osc = audioCtx.createOscillator();
             osc.type = 'sine'; osc.frequency.setValueAtTime(160, now);
             masterGain.gain.setValueAtTime(0, now);
             masterGain.gain.linearRampToValueAtTime(1.1, now + 0.1); 
             masterGain.gain.linearRampToValueAtTime(0, now + 0.7);
             osc.connect(masterGain); osc.start(); osc.stop(now + 0.7);
-
         } else if (type === 'knock') {
-            // 木材音量：保持 0.8 基頻
             const knock = (time) => {
                 const osc = audioCtx.createOscillator();
                 const g = audioCtx.createGain();
@@ -154,17 +187,13 @@
                 osc.start(time); osc.stop(time + 0.15);
             };
             knock(now); knock(now + 0.25);
-
         } else if (type === 'metal') {
-            // 金屬音量：保持 0.35
             const osc = audioCtx.createOscillator();
             osc.type = 'sine'; osc.frequency.setValueAtTime(1500, now);
             masterGain.gain.setValueAtTime(0.35, now);
             masterGain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
             osc.connect(masterGain); osc.start(); osc.stop(now + 0.8);
-
         } else if (type === 'sand') {
-            // 沙紙音量：再次調低至 0.25
             const bufferSize = audioCtx.sampleRate * 0.3;
             const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
             const data = buffer.getChannelData(0);
@@ -174,7 +203,7 @@
             const filter = audioCtx.createBiquadFilter();
             filter.type = 'bandpass'; filter.frequency.value = 1000;
             masterGain.gain.setValueAtTime(0, now);
-            masterGain.gain.linearRampToValueAtTime(0.25, now + 0.05); // 更輕柔的音量
+            masterGain.gain.linearRampToValueAtTime(0.25, now + 0.05); 
             masterGain.gain.linearRampToValueAtTime(0, now + 0.3);
             source.connect(filter); filter.connect(masterGain);
             source.start();
@@ -194,7 +223,7 @@
             setTimeout(() => {
                 element.classList.remove('active-animation');
                 element.classList.remove('active-dwell');
-            }, 600);
+            }, 500);
         }, DWELL_TIME);
     }
 
@@ -205,7 +234,7 @@
         ring.style.display = 'none';
     }
 
-    window.oncontextmenu = function(event) { event.preventDefault(); return false; };
+    window.oncontextmenu = function(e) { e.preventDefault(); return false; };
 </script>
 
 </body>
